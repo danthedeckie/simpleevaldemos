@@ -24,6 +24,7 @@ def custop(x, y):
 s.operators[ast.BitXor] = custop
 
 # Now we're going to use that to 'fake' any more that we want.
+# The following functions and test cases are from Rod8LE:
 
 s.functions['juggler'] = lambda x,y: y - 2 * x if (y-x)>x else y-x
 
