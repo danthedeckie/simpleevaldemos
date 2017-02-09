@@ -6,7 +6,7 @@
 import ast
 import operator
 
-from simpleeval import EvalWithCompoundTypes, DEFAULT_OPERATORS
+from simpleeval import EvalWithCompoundTypes, DEFAULT_OPERATORS, PYTHON3
 
 s = EvalWithCompoundTypes()
 
@@ -37,3 +37,46 @@ assert s.eval('(2, 3) ^crosses_above^ [2.5, 3.5]') == False
 # and make sure we didn't break normal BitXor:
 
 assert s.eval('1 ^ 2') == 1 ^ 2
+
+# and now we can do funky text transformations to make it pretty again:
+
+def eval2(expr):
+    e = expr.replace('juggler', '^juggler^')
+    e = e.replace('crosses_above', '^crosses_above^')
+    return s.eval(e)
+
+assert eval2('1 juggler 7') == 5
+assert eval2('[2, 4] crosses_above [2.5, 3.5]') == True
+assert eval2('(2, 3) crosses_above [2.5, 3.5]') == False
+
+# Now, all that done 'obviously', here's a version of the above with it all
+# done automatically in a class.
+
+class EvalWithCustomOps(EvalWithCompoundTypes):
+    def __init__(self, operators=None, functions=None, names=None):
+        operators[ast.BitXor] = custop
+        super(EvalWithCustomOps, self).__init__(operators, functions, names)
+
+        self.replaces = []
+
+        for op in self.operators.keys():
+            if isinstance(op, str if PYTHON3 else basestring):
+                func = self.operators[op]
+                self.functions[op] = func
+                self.replaces.append(op)
+
+    def eval(self, expr=None):
+        if isinstance(expr, str if PYTHON3 else basestring):
+            for op in self.replaces:
+                expr = expr.replace(op, '^%s^' % op)
+        return super(EvalWithCustomOps, self).eval(expr)
+
+s2 = EvalWithCustomOps(operators={
+    'juggler': lambda x,y: y - 2 * x if (y-x)>x else y-x,
+    'crosses_above': lambda t, s: t[1] > s[1] if t[0]< s[0] else False})
+
+assert s2.eval('1 juggler 7') == 5
+assert s2.eval('[2, 4] crosses_above [2.5, 3.5]') == True
+assert s2.eval('(2, 3) crosses_above [2.5, 3.5]') == False
+
+
