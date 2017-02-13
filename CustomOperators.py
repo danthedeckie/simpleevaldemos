@@ -49,7 +49,24 @@ assert eval2('1 juggler 7') == 5
 assert eval2('[2, 4] crosses_above [2.5, 3.5]') == True
 assert eval2('(2, 3) crosses_above [2.5, 3.5]') == False
 
-# Now, all that done 'obviously', here's a version of the above with it all
+# Alas, the problem with that is that we lose the ability to use those functions
+# as normal functions ( "juggler(2)" -> "^juggler^(2)".
+
+# You could probably figure out a clever regexp to sort it out if you really
+# wanted to - but I'm not clever enough.
+
+# If we didn't mind having haskell style `backticks` for infix operators,
+# then you can trivially continue to use the functions as functions too:
+
+def eval3(expr):
+    return s.eval(expr.replace('`','^'))
+
+assert eval3('1 `juggler` 7') == 5
+assert eval3('juggler(1, 7)') == 5
+assert eval3('[2, 4] `crosses_above` [2.5, 3.5]') == True
+assert eval3('crosses_above([2, 4], [2.5, 3.5])') == True
+
+# Now, here's a version of eval2 (no backticks) with it all
 # done automatically in a class.
 
 class EvalWithCustomOps(EvalWithCompoundTypes):
